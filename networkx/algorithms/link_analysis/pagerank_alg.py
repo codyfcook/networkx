@@ -159,7 +159,7 @@ def pagerank(G, alpha=0.85, personalization=None,
 
 
 def google_matrix(G, alpha=0.85, personalization=None,
-                  nodelist=None, weight='weight', dangling=None):
+                  nodelist=None, weight='weight', dangling=None, colsum=False):
     """Returns the Google matrix of the graph.
 
     Parameters
@@ -246,14 +246,18 @@ def google_matrix(G, alpha=0.85, personalization=None,
     # Assign dangling_weights to any dangling nodes (nodes with no out links)
     for node in dangling_nodes:
         M[node] = dangling_weights
-
-    M /= M.sum(axis=1)  # Normalize rows to sum to 1
+    
+    if not colsum: 
+        M /= M.sum(axis=1) # Normalize rows to sum to 1
+    else: 
+        S = np.diag(M.sum(axis=0))
+        M = np.inv(S)@M
 
     return alpha * M + (1 - alpha) * p
 
 
 def pagerank_numpy(G, alpha=0.85, personalization=None, weight='weight',
-                   dangling=None):
+                   dangling=None, colsum=False):
     """Returns the PageRank of the nodes in the graph.
 
     PageRank computes a ranking of the nodes in the graph G based on
@@ -325,7 +329,8 @@ def pagerank_numpy(G, alpha=0.85, personalization=None, weight='weight',
     if len(G) == 0:
         return {}
     M = google_matrix(G, alpha, personalization=personalization,
-                      weight=weight, dangling=dangling)
+                      weight=weight, dangling=dangling, colsum=colsum)
+    return M
     # use numpy LAPACK solver
     eigenvalues, eigenvectors = np.linalg.eig(M.T)
     ind = np.argmax(eigenvalues)
